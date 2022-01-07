@@ -6,6 +6,6 @@ config = dotenv_values(".env")
 
 client = MongoClient(config.get("DATABASE_CONNECTION_URL"))
 
-db = client.coinmarketnews
+db = client['cypto-news']
 
-collection = db["Coinnews"]
+collection = db["inventory"]
