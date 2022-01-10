@@ -1,18 +1,20 @@
 # Required imports
 # install spacy , nltk, selenium, bs4
 from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
+
+from webdriver_manager.chrome import ChromeDriverManager
+
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import time
+
 import pandas as pd
 import spacy
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from bs4 import BeautifulSoup
 import datetime
 from time import sleep
-import pymongo
+
 from pymongo import MongoClient
 from nltk import ngrams
 
@@ -25,12 +27,10 @@ def scrapeArticles(coin):
     
     nlp = spacy.load('en_core_web_sm')
     PATH = "C:\Program Files (x86)\chromedriver.exe"
+    
     options = webdriver.ChromeOptions()
     options.headless = True
-
-
-    driver = webdriver.Chrome(PATH, options = options)
-
+    driver = webdriver.Chrome(ChromeDriverManager().install(), options = options)  
     driver.get(f"https://coinmarketcap.com/currencies/{coin}/news/")
     driver.maximize_window()
 
@@ -38,6 +38,7 @@ def scrapeArticles(coin):
     desc = []
     age = []
     links = []
+    sources = []
     
     try:
 
@@ -52,7 +53,7 @@ def scrapeArticles(coin):
                 break
             articles = main.find_elements(By.XPATH, 'div')
             html = driver.page_source
-            soup = BeautifulSoup(html)
+            soup = BeautifulSoup(html, 'lxml')
             els = soup.find_all('span', attrs={'class' : 'sc-1eb5slv-0 hykWbK'})
             l_time = els[-1].text
             if l_time.find('days') != -1:
@@ -73,8 +74,6 @@ def scrapeArticles(coin):
                 time = element.find_element(By.XPATH, 'div/span[2]').text
                 if time.find('days') != -1:
                     continue
-                elif source.text == 'Seeking Alpha':
-                    continue
                 elif time.find('day') != -1:
                     titles.append(title.text)
                     desc.append(body[0])
@@ -82,6 +81,7 @@ def scrapeArticles(coin):
                     sttime = t.strftime('%Y-%m-%d')
                     age.append(sttime)
                     links.append(link)
+                    sources.append(source.text)
                 else:
                     continue
             except:
@@ -89,15 +89,15 @@ def scrapeArticles(coin):
         c = []
         for i in range(0,len(titles)):
             c.append(coin)
-        data = {'Coin': c, 'Title' : titles, 'Shortdescription' : desc, 'Time' : age, 'Link' : links}
+        data = {'Coin': c, 'Title' : titles, 'Shortdescription' : desc, 'Time' : age, 'Link' : links, 'Source': sources}
         df = pd.DataFrame(data)
     finally:
         driver.quit()
 
-    driver = webdriver.Chrome(PATH,  options = options)
+    driver = webdriver.Chrome(ChromeDriverManager().install(), options = options)
     
     desc = []
-    for link in links:
+    for i,link in enumerate(links):
         driver.get(link)
         sleep(2)
         try:
@@ -118,8 +118,13 @@ def scrapeArticles(coin):
                 txt = p.text.lower()
                 if (txt.find('cookie') == -1 & txt.find('create a free account') == -1 & txt.find('subscribe')== -1 & txt.find("thanks for reading")== -1):
                     st = st + p.text + ' '
-        desc.append(st)
+        source = df.iloc[i]['Source']
+        if source == 'Seeking Alpha':
+            desc.append(df.iloc[i]['Shortdescription'])
+        else:
+            desc.append(st)
     driver.quit()
+    df.drop('Source', axis = 1, inplace = True)
     df['Description'] = desc
     
     return df
@@ -191,6 +196,7 @@ def ner_and_sentiment(df):
         n = 3
         trigrams = ngrams(d.split(), n)
         onegrams = d.split()
+
         for word in onegrams:                                 ###### Single words ###########
             
             if nlp.vocab[word.lower()].is_stop != True: 
@@ -249,7 +255,6 @@ def ner_and_sentiment(df):
         pos_word_list=[]
         neu_word_list=[]
         neg_word_list=[]
-
         for word in trigrams:                                   ###### Trigrams ###########
                 s = word[0] + ' '+ word [1] + ' '+ word[2]
                 score = sid.polarity_scores(s)['compound']
@@ -294,10 +299,8 @@ def addtodb(df):
 ## MAIN ##
 ##########
 
-# REMOVE PRINT STATEMENTS IN ner_sentiment FUNCTION
-
 def main():
-    coins = ['bitcoin', 'ethereum', 'dogecoin', 'litecoin', 'binance-coin']
+    coins = ['bitcoin', 'ethereum', 'dogecoin', 'litecoin', 'bnb']
     for coin in coins:
         dat = scrapeArticles(coin)
         dat = ner_and_sentiment(dat)
