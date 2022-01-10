@@ -25,8 +25,11 @@ def scrapeArticles(coin):
     
     nlp = spacy.load('en_core_web_sm')
     PATH = "C:\Program Files (x86)\chromedriver.exe"
+    options = webdriver.ChromeOptions()
+    options.headless = True
 
-    driver = webdriver.Chrome(PATH)
+
+    driver = webdriver.Chrome(PATH, options = options)
 
     driver.get(f"https://coinmarketcap.com/currencies/{coin}/news/")
     driver.maximize_window()
@@ -91,7 +94,7 @@ def scrapeArticles(coin):
     finally:
         driver.quit()
 
-    driver = webdriver.Chrome(PATH)
+    driver = webdriver.Chrome(PATH,  options = options)
     
     desc = []
     for link in links:
