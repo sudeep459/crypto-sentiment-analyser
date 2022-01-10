@@ -1,20 +1,15 @@
 # Required imports
-# install spacy , nltk, selenium, bs4
 from selenium import webdriver
-
-from webdriver_manager.chrome import ChromeDriverManager
-
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-
+import chromedriver_autoinstaller
 import pandas as pd
 import spacy
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from bs4 import BeautifulSoup
 import datetime
 from time import sleep
-
 from pymongo import MongoClient
 from nltk import ngrams
 
@@ -26,11 +21,12 @@ from nltk import ngrams
 def scrapeArticles(coin):
     
     nlp = spacy.load('en_core_web_sm')
-    PATH = "C:\Program Files (x86)\chromedriver.exe"
     
     options = webdriver.ChromeOptions()
     options.headless = True
-    driver = webdriver.Chrome(ChromeDriverManager().install(), options = options)  
+
+    chromedriver_autoinstaller.install()
+    driver = webdriver.Chrome(options = options)  
     driver.get(f"https://coinmarketcap.com/currencies/{coin}/news/")
     driver.maximize_window()
 
@@ -94,7 +90,7 @@ def scrapeArticles(coin):
     finally:
         driver.quit()
 
-    driver = webdriver.Chrome(ChromeDriverManager().install(), options = options)
+    driver = webdriver.Chrome(options = options)
     
     desc = []
     for i,link in enumerate(links):
