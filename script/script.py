@@ -13,7 +13,7 @@ import datetime
 from time import sleep
 from pymongo import MongoClient
 from nltk import ngrams
-from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.options import Options
 
 #################
 ## WEBSCRAPING ##
@@ -22,11 +22,13 @@ from webdriver_manager.chrome import ChromeDriverManager
 def scrapeArticles(coin):
     
     nlp = spacy.load('en_core_web_sm')
-    
-    options = webdriver.ChromeOptions()
-    options.headless = True
+    PATH = "/usr/lib/chromium-browser/chromedriver"
+    chrome_options = Options()
+    chrome_options.add_argument('--headless')
+    chrome_options.add_argument('--no-sandbox')
+    chrome_options.add_argument('--disable-dev-shm-usage')
 
-    driver = webdriver.Chrome(ChromeDriverManager().install(), options = options)  
+    driver = webdriver.Chrome(PATH, chrome_options = chrome_options)  
     driver.get(f"https://coinmarketcap.com/currencies/{coin}/news/")
     driver.maximize_window()
 
@@ -90,7 +92,7 @@ def scrapeArticles(coin):
     finally:
         driver.quit()
 
-    driver = webdriver.Chrome(ChromeDriverManager().install(), options = options)
+    driver = webdriver.Chrome(PATH, chrome_options = chrome_options)
     
     desc = []
     for i,link in enumerate(links):
