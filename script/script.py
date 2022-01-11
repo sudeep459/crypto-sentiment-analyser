@@ -20,7 +20,7 @@ from nltk import ngrams
 def scrapeArticles(coin):
     
     nlp = spacy.load('en_core_web_sm')
-    PATH = 'chromedriver.exe'
+    PATH = '/usr/lib/chromium-browser/chromedriver'
     options = webdriver.ChromeOptions()
     options.headless = True
 
