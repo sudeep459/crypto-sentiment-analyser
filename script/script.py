@@ -296,9 +296,11 @@ def addtodb(df):
 def main():
     coins = ['bitcoin', 'ethereum', 'dogecoin', 'litecoin', 'bnb']
     for coin in coins:
+        print(coin)
         dat = scrapeArticles(coin)
         dat = ner_and_sentiment(dat)
         addtodb(dat)
+        print("finish for one coin")
     
 if __name__ == "__main__":
     main()
