@@ -2,7 +2,7 @@ version: '3.6'
 services:
   crypto-news:
     container_name: crypto-news
-    image: crypto-news:test
+    image: devopssf/crypto-news:latest
     command: >
       sh -c "uvicorn app.main:app --host 0.0.0.0 --port 8000"
     restart: always

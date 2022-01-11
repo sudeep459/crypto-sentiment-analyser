@@ -3,7 +3,6 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import chromedriver_autoinstaller
 import pandas as pd
 import spacy
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
@@ -21,12 +20,11 @@ from nltk import ngrams
 def scrapeArticles(coin):
     
     nlp = spacy.load('en_core_web_sm')
-    
+    PATH = 'chromedriver.exe'
     options = webdriver.ChromeOptions()
     options.headless = True
 
-    chromedriver_autoinstaller.install()
-    driver = webdriver.Chrome(options = options)  
+    driver = webdriver.Chrome(PATH, options = options)  
     driver.get(f"https://coinmarketcap.com/currencies/{coin}/news/")
     driver.maximize_window()
 
@@ -90,7 +88,7 @@ def scrapeArticles(coin):
     finally:
         driver.quit()
 
-    driver = webdriver.Chrome(options = options)
+    driver = webdriver.Chrome(PATH, options = options)
     
     desc = []
     for i,link in enumerate(links):
@@ -284,7 +282,7 @@ def ner_and_sentiment(df):
 # Change url
  
 def addtodb(df):
-    url = 'mongodb://user:1234@user-shard-00-00.hyenn.mongodb.net:27017,user-shard-00-01.hyenn.mongodb.net:27017,user-shard-00-02.hyenn.mongodb.net:27017/coinmarketnews?ssl=true&replicaSet=atlas-13v9ws-shard-0&authSource=admin&retryWrites=true&w=majority'
+    url = ''
     client = MongoClient(url)
     db = client['crypto-news']
     collection = db['inventory']
