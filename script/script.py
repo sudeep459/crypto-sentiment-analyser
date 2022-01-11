@@ -5,6 +5,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import pandas as pd
 import spacy
+import nltk
+nltk.download('vader_lexicon')
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from bs4 import BeautifulSoup
 import datetime
@@ -20,7 +22,7 @@ from nltk import ngrams
 def scrapeArticles(coin):
     
     nlp = spacy.load('en_core_web_sm')
-    PATH = '/usr/lib/chromium-browser/chromedriver'
+    PATH = './chromedriver.exe'
     options = webdriver.ChromeOptions()
     options.headless = True
 
