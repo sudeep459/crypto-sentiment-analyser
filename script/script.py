@@ -120,7 +120,7 @@ def scrapeArticles(coin):
     driver.quit()
     df.drop('Source', axis = 1, inplace = True)
     df['Description'] = desc
-    
+    print("Done scraping")
     return df
 
 def take_second(elem):
@@ -273,6 +273,7 @@ def ner_and_sentiment(df):
     df['One_word_Reviews'] = [el for el in oneword_list]
     df['Two_word_Reviews'] = [el for el in twoword_list]
     df['Three_word_Reviews'] = [el for el in threeword_list]
+    print('Done with sentiment analysis')
     return df
 
 ###################
@@ -288,6 +289,7 @@ def addtodb(df):
     collection = db['inventory']
     if len(df) != 0:
         collection.insert_many(df.to_dict('records'))
+    print("Added to db")
 
 ##########
 ## MAIN ##
