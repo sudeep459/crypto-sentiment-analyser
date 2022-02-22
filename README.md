@@ -8,4 +8,5 @@ Use the docker-compose.yml
 
 For running script.py:
 
-Use "python -u .\script\script.py"
+Install the requirements with "pip install -r requirements.txt"
+Use "python -u script.py"
