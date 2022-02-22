@@ -1,6 +1,6 @@
 
 from pydantic import BaseModel
-from typing import List
+from typing import Dict, List
 
 class Article(BaseModel):
     Coin: str
@@ -13,7 +13,7 @@ class Article(BaseModel):
     Description_Ents: List[str]
     score: float
     Overall_bias: str
-    One_word_Reviews: List[tuple]
-    Two_word_Reviews: List[tuple]
-    Three_word_Reviews: List[tuple]
+    One_word_Reviews: List[Dict]
+    Two_word_Reviews: List[Dict]
+    Three_word_Reviews: List[Dict]
 

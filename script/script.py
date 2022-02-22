@@ -1,134 +1,85 @@
 # Required imports
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 import pandas as pd
 import spacy
 import nltk
 nltk.download('vader_lexicon')
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from bs4 import BeautifulSoup
-import datetime
-from time import sleep
 from pymongo import MongoClient
 from nltk import ngrams
-from selenium.webdriver.chrome.options import Options
+from urllib.request import Request, urlopen
+import requests
+import json 
+import re
 
+from config import *
 #################
 ## WEBSCRAPING ##
 #################
 
-def scrapeArticles(coin):
+def scrapeArticles():
     
-    nlp = spacy.load('en_core_web_sm')
-    PATH = "/usr/lib/chromium-browser/chromedriver"
-    chrome_options = Options()
-    chrome_options.add_argument('--headless')
-    chrome_options.add_argument('--no-sandbox')
-    chrome_options.add_argument('--disable-dev-shm-usage')
-
-    driver = webdriver.Chrome(PATH, chrome_options = chrome_options)  
-    driver.get(f"https://coinmarketcap.com/currencies/{coin}/news/")
-    driver.maximize_window()
-
+    CLEANR = re.compile('<.*?>') 
+    link = "https://www.cryptonext.ai/wp-json/wp/v2/posts"
+    coin_list = ['bitcoin', 'altcoin', 'ethereum', 'ripple', 'shiba-inu', 'dogecoin', 'cardano', 'polkadot', 'solana', 'tether']
+    coins = []
     titles = []
-    desc = []
-    age = []
+    shortdesc = []
+    times = []
     links = []
-    sources = []
+    desc = []
+    ids = []
     
     try:
+        req = Request(link, headers= {"User-Agent" : "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.80 Safari/537.36 Edg/98.0.1108.50"})
+        webpage = urlopen(req).read()
+        with requests.Session() as c:
+            soup = BeautifulSoup(webpage, 'html5lib')
+        body = soup.find('body')
+        articles = json.loads(body.text)
+    except Exception as e:
+        print(e)
 
-        main = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.XPATH, '//*[@id="__next"]/div[1]/div[1]/div[2]/div/div[3]/div/div/main/div[2]'))
-        )
-        articles = main.find_elements(By.XPATH, 'div')
-        while(True):
-            try:
-                driver.execute_script("arguments[0].click();", WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="__next"]/div[1]/div[1]/div[2]/div/div[3]/div/div/main/button'))))
-            except:
-                break
-            articles = main.find_elements(By.XPATH, 'div')
-            html = driver.page_source
-            soup = BeautifulSoup(html, 'lxml')
-            els = soup.find_all('span', attrs={'class' : 'sc-1eb5slv-0 hykWbK'})
-            l_time = els[-1].text
-            if l_time.find('days') != -1:
-                break
-            elif l_time.find('month') != -1:
-                break
-            else:
-                continue
-        for article in articles:
-            try:
-                element = WebDriverWait(article, 10).until(
-                    EC.presence_of_element_located((By.XPATH, 'a/div[1]'))
-                )
-                source = element.find_element(By.XPATH,'div/span[1]')
-                link = article.find_element(By.XPATH, 'a').get_attribute('href')
-                title = element.find_element(By.XPATH, 'h3')
-                body = element.find_element(By.XPATH, 'p').text.split('...')
-                time = element.find_element(By.XPATH, 'div/span[2]').text
-                if time.find('days') != -1:
-                    continue
-                elif time.find('day') != -1:
-                    titles.append(title.text)
-                    desc.append(body[0])
-                    t = datetime.datetime.now() - datetime.timedelta(days = 1)
-                    sttime = t.strftime('%Y-%m-%d')
-                    age.append(sttime)
-                    links.append(link)
-                    sources.append(source.text)
-                else:
-                    continue
-            except:
-                continue
-        c = []
-        for i in range(0,len(titles)):
-            c.append(coin)
-        data = {'Coin': c, 'Title' : titles, 'Shortdescription' : desc, 'Time' : age, 'Link' : links, 'Source': sources}
-        df = pd.DataFrame(data)
-    finally:
-        driver.quit()
-
-    driver = webdriver.Chrome(PATH, chrome_options = chrome_options)
-    
-    desc = []
-    for i,link in enumerate(links):
-        driver.get(link)
-        sleep(2)
+    for article in articles:
         try:
-            al = WebDriverWait(driver, 10).until(
-                    EC.presence_of_element_located((By.XPATH, '//*[@id="__next"]/div[1]/div[2]/div/div[2]/div[2]/div[2]/div[2]/div[3]/div[2]/a'))
-                ).get_attribute('href')
-            driver.get(al)
-            sleep(2)
-        except:
-            print('no reroute')
-        html = driver.page_source
-        soup = BeautifulSoup(html, 'lxml')
-        descr = soup.find_all('p')
-        st = ''
-        for p in descr:
-            doc = nlp(p.text)
-            if len(doc) > 2:
-                txt = p.text.lower()
-                if (txt.find('cookie') == -1 & txt.find('create a free account') == -1 & txt.find('subscribe')== -1 & txt.find("thanks for reading")== -1):
-                    st = st + p.text + ' '
-        source = df.iloc[i]['Source']
-        if source == 'Seeking Alpha':
-            desc.append(df.iloc[i]['Shortdescription'])
-        else:
-            desc.append(st)
-    driver.quit()
-    df.drop('Source', axis = 1, inplace = True)
-    df['Description'] = desc
+            artid = article['id'] 
+            date = article['date'].split('T')[0]
+            title = article['title']['rendered']
+            sd = article['excerpt']['rendered']
+            des = article['content']['rendered']
+            des = re.sub(CLEANR, '', des)
+            desn = des.split()
+            desnew = ''
+            for item in desn[:-3]:
+                desnew = desnew + " " + item
+            link = article['_links']['self'][0]['href']
+            coinlink = article['_links']['wp:term'][0]['href']
+            req = Request(coinlink, headers= {"User-Agent" : "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.80 Safari/537.36 Edg/98.0.1108.50"})
+            webpage = urlopen(req).read()
+            soup1 = BeautifulSoup(webpage, 'html5lib')
+            body1 = soup1.find('body')
+            js = json.loads(body1.text)
+            coinname = js[0]['slug']
+            if coinname not in coin_list:
+                continue
+            ids.append(artid)
+            coins.append(coinname)
+            links.append(link)
+            desc.append(desnew)
+            shortdesc.append(sd)
+            titles.append(title)
+            times.append(date)
+        except Exception as e:
+            print(e)
+    
+    data = {'ArticleID': ids, 'Coin': coins, 'Title' : titles, 'Shortdescription' : shortdesc, 'Time' : times, 'Link' : links, 'Description' : desc}
+    df = pd.DataFrame(data)
+    
     print("Done scraping")
     return df
 
 def take_second(elem):
-    return elem[1]
+    return elem['score']
 
 ###############################################
 ## Get Named Entities and Sentiment Analysis ##
@@ -172,7 +123,7 @@ def ner_and_sentiment(df):
     sid = SentimentIntensityAnalyzer()
 
     scores = []
-    for i,c,t,sd,tim,l,d,tent,dent in df.itertuples():
+    for i,artid,c,t,sd,tim,l,d,tent,dent in df.itertuples():
             score = sid.polarity_scores(str(d))
             scores.append(score)
 
@@ -185,7 +136,7 @@ def ner_and_sentiment(df):
     oneword_list = []
     twoword_list = []
     threeword_list = []
-    for i,c,t,sd,ti,l,d,te,de,s,b in df.itertuples():
+    for i,artid,c,t,sd,ti,l,d,te,de,s,b in df.itertuples():
         pos_word_list=[]
         neu_word_list=[]
         neg_word_list=[] 
@@ -200,20 +151,20 @@ def ner_and_sentiment(df):
             if nlp.vocab[word.lower()].is_stop != True: 
                 score = sid.polarity_scores(word)['compound']
                 if score > 0.2:
-                    if (word,score) in pos_word_list:
+                    if {"words":[word],"score": score} in pos_word_list:
                         continue
                     else:
-                        pos_word_list.append((word,score))
+                        pos_word_list.append({'words': [word],'score': score})
                 elif score < -0.2:
-                    if (word,score) in neg_word_list:
+                    if {"words":[word],"score": score} in neg_word_list:
                         continue
                     else:
-                        neg_word_list.append((word,score))
+                        neg_word_list.append({'words': [word],'score': score})
                 else:
-                    if (word,score) in neu_word_list:
+                    if {"words":[word],"score": score} in neu_word_list:
                         continue
                     else:
-                        neu_word_list.append((word,score))  
+                        neu_word_list.append({'words': [word],'score': score})  
         pos_word_list = sorted(pos_word_list, key = take_second, reverse = True)
         neg_word_list = sorted(neg_word_list, key = take_second)
         neu_word_list = sorted(neu_word_list, key = take_second)
@@ -230,15 +181,17 @@ def ner_and_sentiment(df):
         neg_word_list=[]
         
         for word in bigrams:                                   ###### Bigrams ########### 
-                   
+                temp = []
+                temp.append(word[0])
+                temp.append(word[1])
                 s = word[0] + ' ' + word[1]
                 score = sid.polarity_scores(s)['compound']
                 if score > 0.2:
-                    pos_word_list.append((s,score))
+                    pos_word_list.append({'words': temp,'score': score})
                 elif score < -0.2:
-                    neg_word_list.append((s,score))
+                    neg_word_list.append({'words': temp,'score': score})
                 else:
-                    neu_word_list.append((s,score))    
+                    neu_word_list.append({'words': temp,'score': score})    
         pos_word_list = sorted(pos_word_list, key = take_second, reverse = True)
         neg_word_list = sorted(neg_word_list, key = take_second)
         neu_word_list = sorted(neu_word_list, key = take_second)
@@ -253,15 +206,21 @@ def ner_and_sentiment(df):
         pos_word_list=[]
         neu_word_list=[]
         neg_word_list=[]
+        
+        
         for word in trigrams:                                   ###### Trigrams ###########
+                temp = []
+                temp.append(word[0])
+                temp.append(word[1])
+                temp.append(word[2])
                 s = word[0] + ' '+ word [1] + ' '+ word[2]
                 score = sid.polarity_scores(s)['compound']
                 if score > 0.2:
-                    pos_word_list.append((s,score))
+                    pos_word_list.append({'words': temp,'score': score})
                 elif score < -0.2:
-                    neg_word_list.append((s,score))
+                    neg_word_list.append({'words': temp,'score': score})
                 else:
-                    neu_word_list.append((s,score)) 
+                    neu_word_list.append({'words': temp,'score': score}) 
         
         pos_word_list = sorted(pos_word_list, key = take_second, reverse = True)
         neg_word_list = sorted(neg_word_list, key = take_second)
@@ -287,12 +246,13 @@ def ner_and_sentiment(df):
 # Change url
  
 def addtodb(df):
-    url = ''
+    url = MONGO_URL
     client = MongoClient(url)
     db = client['crypto-news']
     collection = db['inventory']
     if len(df) != 0:
-        collection.insert_many(df.to_dict('records'))
+        for doc in df.to_dict('records'):
+            collection.update_one({'ArticleID': doc['ArticleID']}, {"$set": doc}, upsert = True)
     print("Added to db")
 
 ##########
@@ -300,14 +260,10 @@ def addtodb(df):
 ##########
 
 def main():
-    coins = ['bitcoin', 'ethereum', 'dogecoin', 'litecoin', 'bnb']
-    for coin in coins:
-        print(coin)
-        dat = scrapeArticles(coin)
-        dat = ner_and_sentiment(dat)
-        addtodb(dat)
-        print("finish for one coin")
     
+    df = scrapeArticles()
+    df = ner_and_sentiment(df)
+    addtodb(df)    
 if __name__ == "__main__":
     main()
 

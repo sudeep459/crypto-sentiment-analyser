@@ -1,10 +1,8 @@
 from pymongo import MongoClient
 
-from dotenv import dotenv_values
+from config import *
 
-config = dotenv_values(".env")
-
-client = MongoClient(config.get("DATABASE_CONNECTION_URL"))
+client = MongoClient(MONGO_URL)
 
 db = client['crypto-news']
 
