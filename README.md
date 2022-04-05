@@ -4,13 +4,14 @@
 ### These two are to be executed seperately.
 
 ### How do I get set up?
-	#### Summary of set up
-		. Run the fast-api service using app.main.py file
+	Summary of set up
+		* Give Database details in config.py file.
+		* Run the fast-api service using app.main.py file
 			. pip install -r requirements.txt
 			. uvicorn app.main:app --host 0.0.0.0 --port 8000
-		. (or) Use docker files
-		. For Script cronjob
-			. Fill db details in config.py
+		* (or) Use docker files
+		* For Script cronjob
 			. cd script
+			. Fill db details in config.py (this is different from the one in root folder)
 			. pip install -r requirements.txt
 			. python script.py - runs everyday at 9:00 PM
