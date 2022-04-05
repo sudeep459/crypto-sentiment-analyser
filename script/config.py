@@ -1,4 +1,5 @@
 import os
+
 LOCAL = 'mongodb://localhost:27017/'
 MONGODB_IP = os.environ.get("MONGODB_IP", "")
 MONGODB_PASSWORD = os.environ.get("MONGODB_PASSWORD", "")

@@ -3,7 +3,7 @@ from re import S
 from turtle import pos
 from fastapi import APIRouter,Request
 
-from ..models.models import Article
+from ..models.models import Article, inputData
 from ..config.database import collection
 
 import datetime
@@ -69,11 +69,15 @@ async def get_articles(request: Request):
             article.append(item)
     return article
 
-@api_router.get("/api/articles/sentiment/")
-async def get_sentiment(request: Request): # Gives the weekly sentiment of the provided coin  
+@api_router.post("/api/articles/sentiment/")
+async def get_sentiment(data: inputData): # Gives the weekly sentiment of the provided coin  
     # Return overall sentiment, list of words for sentiment.
-    info = await request.json()
-    coin = info['coin']
+    coin_fl = 0
+    if data.coin != "":
+        coin = data.coin
+        coin_fl = 1
+    else:
+        coin = data.symbol
     reqdate = datetime.datetime.now() - datetime.timedelta(weeks = 4, days= 17)
     cursor = collection.find({})
     articles = []
@@ -89,8 +93,13 @@ async def get_sentiment(request: Request): # Gives the weekly sentiment of the p
     poscount = 0
     negcount = 0
     neucount = 0
+    coinid = ''
+    if coin_fl:
+        coinid = 'Coin'
+    else:
+        coinid = 'Symbol'
     for doc in cursor:
-        if (doc['Coin'] == coin):
+        if (doc[coinid] == coin):
             strdate = doc['Time']
             date = datetime.datetime.strptime(strdate, '%Y-%m-%d')
             if date > reqdate:

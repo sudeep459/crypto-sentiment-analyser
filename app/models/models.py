@@ -1,6 +1,8 @@
 
 from pydantic import BaseModel
-from typing import Dict, List
+from typing import Dict, List, Optional
+
+from typer import Option
 
 class Article(BaseModel):
     Coin: str
@@ -16,4 +18,8 @@ class Article(BaseModel):
     One_word_Reviews: List[Dict]
     Two_word_Reviews: List[Dict]
     Three_word_Reviews: List[Dict]
+
+class inputData(BaseModel):
+    coin: str
+    symbol: str
 
