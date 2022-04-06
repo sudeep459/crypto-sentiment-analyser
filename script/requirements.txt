@@ -9,3 +9,4 @@ requests==2.18.4
 regex==2021.11.10
 html5lib==1.1
 typer==0.4.0
+click==8.0.3
