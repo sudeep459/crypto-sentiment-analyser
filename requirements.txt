@@ -9,3 +9,4 @@ typing_extensions==4.0.0
 uvicorn==0.15.0
 python-dotenv==0.19.2
 dnspython==2.1.0
+typer==0.4.0

@@ -8,3 +8,4 @@ nltk==3.6.7
 requests==2.18.4
 regex==2021.11.10
 html5lib==1.1
+typer==0.4.0
